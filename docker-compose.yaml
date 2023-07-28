@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:14.3
+    restart: always
+    ports:
+      - "5432:5432" # Corregido el guion bajo (_) por dos puntos (:)
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # Corregido POSTGRESS por POSTGRES
+      POSTGRES_DB: ${DB_NAME} # Corregido POSTGRESS por POSTGRES
+    container_name: teslodb
+    volumes:
+      - ./postgress:/var/lib/postgresql/data # Corregido postgressql por postgresql
+

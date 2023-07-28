@@ -12,6 +12,7 @@ import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { PaginationDTO } from './dto/pagination.dto';
 import { isUUID } from 'class-validator';
+import { ProductImage } from './entities/product-image.entity';
 
 @Injectable()
 export class ProductService {
@@ -20,13 +21,21 @@ export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productRepositoryImage: Repository<ProductImage>,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.productRepository.create(createProductDto);
+      const { images = [], ...productDetails } = createProductDto;
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map((image) =>
+          this.productRepositoryImage.create({ url: image }),
+        ),
+      });
       await this.productRepository.save(product);
-      return product;
+      return { ...product, images: images };
     } catch (error) {
       this.handlerError(error);
     }
@@ -46,22 +55,38 @@ export class ProductService {
   }
 
   async findOne(term: string) {
-    if(isUUID(term)){
+    if (isUUID(term)) {
       const product = await this.productRepository.findOneBy({ id: term });
-      return product
-    }else{
+      return product;
+    } else {
       const queryBuilder = this.productRepository.createQueryBuilder();
-      const product = await queryBuilder.where("title =:title or slug =:slug",{
-        title:term,
-        slug:term
-      }).getOne();
+      const product = await queryBuilder
+        .where('title =:title or slug =:slug', {
+          title: term,
+          slug: term,
+        })
+        .getOne();
       return product;
     }
-
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    const product = await this.productRepository.preload({
+      id: id,
+      ...updateProductDto,
+      images: [],
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product no found');
+    } else {
+      try {
+        await this.productRepository.save(product);
+        return product;
+      } catch (error) {
+        this.handlerError(error);
+      }
+    }
   }
 
   async remove(id: string) {

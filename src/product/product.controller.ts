@@ -20,7 +20,7 @@ export class ProductController {
 
   @Get(':uuid')
   findOne(@Param('uuid') uuid: string) {
-    return this.productService.findOne(uuid);
+    return this.productService.findOnePlain(uuid);
   }
 
   @Patch(':id')

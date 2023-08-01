@@ -47,8 +47,12 @@ export class ProductService {
       const products = await this.productRepository.find({
         take: limit,
         skip: offset,
+        //relations: { images: true },
       });
-      return products;
+      return products.map((product) => ({
+        ...product,
+        images: product.images.map((i) => i.url),
+      }));
     } catch (error) {
       this.handlerError(error);
     }
@@ -59,7 +63,7 @@ export class ProductService {
       const product = await this.productRepository.findOneBy({ id: term });
       return product;
     } else {
-      const queryBuilder = this.productRepository.createQueryBuilder();
+      const queryBuilder = this.productRepository.createQueryBuilder('pro');
       const product = await queryBuilder
         .where('title =:title or slug =:slug', {
           title: term,
@@ -90,12 +94,9 @@ export class ProductService {
   }
 
   async remove(id: string) {
-    const product = await this.productRepository.delete(id);
-    if (product.affected) {
-      return 'Product delete success';
-    } else {
-      throw new NotFoundException(`Product ${id} no found!`);
-    }
+    const product = await this.findOne(id);
+    await this.productRepository.remove(product);
+    return 'Product delete success';
   }
 
   handlerError(error: any) {
@@ -106,4 +107,14 @@ export class ProductService {
       throw new InternalServerErrorException(error.detail);
     }
   }
+
+  async findOnePlain(term: string) {
+    const product = await this.findOne(term);
+    return {
+      ...product,
+      images: product.images.map((i) => i.url),
+    };
+  }
 }
+
+

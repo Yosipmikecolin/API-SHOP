@@ -79,35 +79,34 @@ export class ProductService {
     const { images, ...rest } = updateProductDto;
     const product = await this.productRepository.preload({
       id: idProduct,
-      ...rest,
-      images: images.map((i) => this.productRepositoryImage.create({ url: i })),
+      ...rest
     });
 
     if (!product)
       throw new NotFoundException(`Product with id: ${idProduct} not found`);
     //Create query runner
-    /*     const queryRunner = this.dataSource.createQueryRunner();
+    const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction(); */
+    await queryRunner.startTransaction();
 
     try {
-      /*       if (images) {
+      if (images) {
         await queryRunner.manager.delete(ProductImage, {
           product: { idProduct },
         });
         product.images = images.map((image) =>
           this.productRepositoryImage.create({ url: image }),
         );
-      } */
+      }
 
-      await this.productRepository.save(product);
-      /*       await queryRunner.manager.save(product);
+      //await this.productRepository.save(product);
+      await queryRunner.manager.save(product);
       await queryRunner.commitTransaction();
-      await queryRunner.release(); */
+      await queryRunner.release();
       return this.findOnePlain(idProduct);
     } catch (error) {
-      /*      await queryRunner.rollbackTransaction();
-      await queryRunner.release(); */
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
       this.handlerError(error);
     }
   }

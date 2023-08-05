@@ -79,7 +79,7 @@ export class ProductService {
     const { images, ...rest } = updateProductDto;
     const product = await this.productRepository.preload({
       id: idProduct,
-      ...rest
+      ...rest,
     });
 
     if (!product)
@@ -92,7 +92,7 @@ export class ProductService {
     try {
       if (images) {
         await queryRunner.manager.delete(ProductImage, {
-          product: { idProduct },
+          product: { id:idProduct },
         });
         product.images = images.map((image) =>
           this.productRepositoryImage.create({ url: image }),
